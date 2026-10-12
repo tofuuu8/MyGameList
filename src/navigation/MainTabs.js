@@ -3,6 +3,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TabIcon from '../components/Icons';
 import LibraryScreen from '../screens/LibraryScreen';
+import AddGameScreen from '../screens/AddGameScreen';
+import DiscoverScreen from '../screens/DiscoverScreen';
 import { fonts, useTheme } from '../theme';
 
 function ComingSoon({ title, text }) {
@@ -16,8 +18,6 @@ function ComingSoon({ title, text }) {
   );
 }
 
-const DiscoverScreen = () => <ComingSoon title="Discover" text="Trending and popular games, with one tap to add them to your library. Coming soon." />;
-const AddScreen = () => <ComingSoon title="Add game" text="Add a game by hand or search for it by name. Coming soon." />;
 const StatsScreen = () => <ComingSoon title="Stats" text="Total hours, completed games and installed vs. not installed. Coming soon." />;
 const MyPcScreen = () => <ComingSoon title="My PC" text="Enter your RAM, GPU and CPU to see which games your PC can run. Coming soon." />;
 
@@ -38,7 +38,7 @@ export default function MainTabs() {
     >
       <Tab.Screen name="Library" component={LibraryScreen} />
       <Tab.Screen name="Discover" component={DiscoverScreen} />
-      <Tab.Screen name="Add" component={AddScreen} />
+      <Tab.Screen name="Add" component={AddGameScreen} />
       <Tab.Screen name="Stats" component={StatsScreen} />
       <Tab.Screen name="My PC" component={MyPcScreen} />
     </Tab.Navigator>
