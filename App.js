@@ -12,11 +12,13 @@ import {
 } from '@expo-google-fonts/space-grotesk';
 
 import { AuthProvider, useAuth } from './src/context/AuthContext';
-import { palettes, useTheme } from './src/theme';
+import { ThemeProvider, useTheme, useThemePreference } from './src/theme';
+import MainTabs from './src/navigation/MainTabs';
 import SplashScreen from './src/screens/SplashScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
-import LibraryScreen from './src/screens/LibraryScreen';
+import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 
 // Keep the native splash up until fonts are ready.
 SplashScreenNative.preventAutoHideAsync();
@@ -26,6 +28,7 @@ const MIN_SPLASH_MS = 1800;
 
 function Root() {
   const t = useTheme();
+  const { isDark } = useThemePreference();
   const { session, loading } = useAuth();
   const [minTimeDone, setMinTimeDone] = useState(false);
 
@@ -34,23 +37,28 @@ function Root() {
     return () => clearTimeout(id);
   }, []);
 
-  const isDark = t === palettes.dark;
+  const base = isDark ? DarkTheme : DefaultTheme;
   const navTheme = {
-    ...(isDark ? DarkTheme : DefaultTheme),
-    colors: { ...(isDark ? DarkTheme : DefaultTheme).colors, background: t.bg, card: t.bg, text: t.text, border: t.border, primary: t.red },
+    ...base,
+    colors: { ...base.colors, background: t.bg, card: t.bg, text: t.text, border: t.border, primary: t.red },
   };
 
   if (loading || !minTimeDone) return <SplashScreen />;
 
   return (
     <NavigationContainer theme={navTheme}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {session ? (
-          <Stack.Screen name="Library" component={LibraryScreen} />
+          <>
+            <Stack.Screen name="Main" component={MainTabs} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
+          </>
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
           </>
         )}
       </Stack.Navigator>
@@ -73,10 +81,11 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <StatusBar style="auto" />
-        <Root />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Root />
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

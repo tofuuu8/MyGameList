@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { fonts, useTheme } from '../theme';
 
-export default function TextField({ label, style, ...props }) {
+export default function TextField({ label, style, inputStyle, ...props }) {
   const t = useTheme();
   const [focused, setFocused] = useState(false);
   return (
@@ -27,6 +27,7 @@ export default function TextField({ label, style, ...props }) {
           paddingHorizontal: 14,
           fontFamily: fonts.regular,
           fontSize: 15,
+          ...inputStyle,
         }}
         {...props}
       />

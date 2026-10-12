@@ -30,7 +30,15 @@ export default function LoginScreen({ navigation }) {
     });
     setLoading(false);
     // On success the auth listener swaps in the app screens automatically.
-    if (err) setError(err.message);
+    if (err) {
+      if (/not confirmed/i.test(err.message)) {
+        // Account exists but the email was never verified: send a fresh code.
+        await supabase.auth.resend({ type: 'signup', email: email.trim() });
+        navigation.navigate('VerifyEmail', { email: email.trim() });
+      } else {
+        setError(err.message);
+      }
+    }
   }
 
   async function handleForgot() {

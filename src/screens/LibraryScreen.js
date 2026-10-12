@@ -1,30 +1,169 @@
-import { Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, Text, TextInput, View,
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GameCard from '../components/GameCard';
 import Button from '../components/Button';
-import { Wordmark } from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
-// Temporary home screen. The real Library comes in the next step.
-export default function LibraryScreen() {
+const FILTERS = ['All', 'Playing', 'Completed', 'Want to Play', 'Installed'];
+
+function matches(game, filter) {
+  switch (filter) {
+    case 'Playing': return game.status === 'playing';
+    case 'Completed': return game.status === 'completed';
+    case 'Want to Play': return game.status === 'want_to_play';
+    case 'Installed': return game.is_installed;
+    default: return true;
+  }
+}
+
+// For testing the screen before the Add Game screen exists.
+const SAMPLE_GAMES = [
+  { title: 'Hollow Knight', genre: 'Metroidvania', status: 'completed', is_installed: true, rating: 5, hours_played: 48 },
+  { title: "Baldur's Gate 3", genre: 'RPG', status: 'playing', is_installed: true, rating: 4.5, hours_played: 112 },
+  { title: 'Stardew Valley', genre: 'Farming Sim', status: 'playing', is_installed: false, rating: 4.5, hours_played: 86 },
+  { title: 'Disco Elysium', genre: 'RPG', status: 'want_to_play', is_installed: false, rating: null, hours_played: 0 },
+];
+
+export default function LibraryScreen({ navigation }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
-  const name = session?.user?.user_metadata?.username || session?.user?.email;
+  const [games, setGames] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
+  const [filter, setFilter] = useState('All');
+  const [query, setQuery] = useState('');
+
+  const load = useCallback(async () => {
+    const { data, error: err } = await supabase
+      .from('games')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (err) setError(err.message);
+    else { setGames(data); setError(''); }
+    setLoading(false);
+    setRefreshing(false);
+  }, []);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  async function addSamples() {
+    setLoading(true);
+    const { error: err } = await supabase.from('games').insert(SAMPLE_GAMES);
+    if (err) { setError(err.message); setLoading(false); } else { load(); }
+  }
+
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return games.filter(
+      (g) => matches(g, filter) && (!q || g.title.toLowerCase().includes(q) || (g.genre || '').toLowerCase().includes(q))
+    );
+  }, [games, filter, query]);
+
+  const initial = (session?.user?.user_metadata?.username || session?.user?.email || '?').charAt(0).toUpperCase();
+
+  const header = (
+    <View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: insets.top + 16, paddingBottom: 12 }}>
+        <View>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 26, color: t.text }}>MyGameList</Text>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.muted, marginTop: 2 }}>
+            {games.length} {games.length === 1 ? 'game' : 'games'} in your library
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => navigation.getParent()?.navigate('Profile')}
+          accessibilityRole="button"
+          accessibilityLabel="Profile and settings"
+          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: t.red, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.onRed }}>{initial}</Text>
+        </Pressable>
+      </View>
+
+      <TextInput
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search your games"
+        placeholderTextColor={t.muted}
+        accessibilityLabel="Search your games"
+        autoCorrect={false}
+        style={{
+          height: 44, borderRadius: 12, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface,
+          color: t.text, paddingHorizontal: 14, fontFamily: fonts.regular, fontSize: 15, marginBottom: 12,
+        }}
+      />
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 14 }}>
+        {FILTERS.map((f) => {
+          const on = f === filter;
+          return (
+            <Pressable
+              key={f}
+              onPress={() => setFilter(f)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              style={{
+                height: 36, paddingHorizontal: 14, borderRadius: 18, justifyContent: 'center', borderWidth: 1,
+                borderColor: on ? t.red : t.border, backgroundColor: on ? t.red : t.surface,
+              }}
+            >
+              <Text style={{ fontFamily: on ? fonts.bold : fonts.regular, fontSize: 13, color: on ? t.onRed : t.text }}>{f}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+
+  let empty = null;
+  if (loading) {
+    empty = <ActivityIndicator color={t.red} style={{ marginTop: 48 }} />;
+  } else if (error) {
+    empty = (
+      <View style={{ marginTop: 32, gap: 12 }}>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.link }}>{error}</Text>
+        <Button title="Try again" variant="secondary" onPress={load} />
+      </View>
+    );
+  } else if (games.length === 0) {
+    empty = (
+      <View style={{ marginTop: 40, gap: 12 }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: t.text }}>Your library is empty</Text>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.muted, lineHeight: 20 }}>
+          Add your first game from the Add tab. To preview how the app looks, you can load a few sample games.
+        </Text>
+        <Button title="Load sample games" variant="secondary" onPress={addSamples} />
+      </View>
+    );
+  } else {
+    empty = (
+      <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.muted, marginTop: 32, textAlign: 'center' }}>
+        No games match your search or filter.
+      </Text>
+    );
+  }
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: insets.top + 24, paddingHorizontal: 24 }}>
-      <Wordmark size={30} />
-      <Text style={{ fontFamily: fonts.regular, fontSize: 15, color: t.muted, marginTop: 8 }}>
-        Signed in as {name}
-      </Text>
-      <Text style={{ fontFamily: fonts.regular, fontSize: 15, color: t.text, marginTop: 24 }}>
-        Your library will appear here.
-      </Text>
-      <View style={{ marginTop: 'auto', paddingBottom: insets.bottom + 24 }}>
-        <Button title="Log out" variant="secondary" onPress={() => supabase.auth.signOut()} />
-      </View>
-    </View>
+    <FlatList
+      style={{ flex: 1, backgroundColor: t.bg }}
+      contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24, gap: 10 }}
+      data={shown}
+      keyExtractor={(g) => g.id}
+      renderItem={({ item }) => <GameCard game={item} />}
+      ListHeaderComponent={header}
+      ListEmptyComponent={empty}
+      keyboardShouldPersistTaps="handled"
+      refreshControl={
+        <RefreshControl refreshing={refreshing} tintColor={t.red} onRefresh={() => { setRefreshing(true); load(); }} />
+      }
+    />
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View,
+  KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LogoMark, Wordmark } from '../components/Logo';
@@ -46,10 +46,9 @@ export default function SignUpScreen({ navigation }) {
       setError(err.message);
       return;
     }
-    // If email confirmation is on in Supabase, there is no session yet.
+    // With email confirmation on, there is no session yet: ask for the emailed code.
     if (!data.session) {
-      Alert.alert('Check your email', 'Confirm your email address, then log in.');
-      navigation.navigate('Login');
+      navigation.navigate('VerifyEmail', { email: email.trim() });
     }
     // If a session exists, the auth listener opens the app automatically.
   }
