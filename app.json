@@ -5,24 +5,30 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "ios": {
-      "supportsTablet": true
-    },
+    "scheme": "mygamelist",
+    "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.mygamelist.app" },
     "android": {
+      "package": "com.mygamelist.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#E5202E"
       }
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
+    "web": { "favicon": "./assets/favicon.png" },
     "plugins": [
-      "expo-splash-screen",
-      "expo-font"
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 150,
+          "backgroundColor": "#FFFFFF",
+          "dark": {
+            "image": "./assets/splash-icon-dark.png",
+            "backgroundColor": "#0A0A0A"
+          }
+        }
+      ]
     ]
   }
 }
