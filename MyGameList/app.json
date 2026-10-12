@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "MyGameList",
+    "slug": "MyGameList",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "mygamelist",
+    "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.mygamelist.app" },
+    "android": {
+      "package": "com.mygamelist.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#E5202E"
+      }
+    },
+    "web": { "favicon": "./assets/favicon.png" },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 150,
+          "backgroundColor": "#FFFFFF",
+          "dark": {
+            "image": "./assets/splash-icon-dark.png",
+            "backgroundColor": "#0A0A0A"
+          }
+        }
+      ]
+    ]
+  }
+}
