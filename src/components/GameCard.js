@@ -1,5 +1,6 @@
 import { Image, Pressable, Text, View } from 'react-native';
 import { fonts, useTheme } from '../theme';
+import CompatBadge from './CompatBadge';
 
 const COVER_COLORS = ['#8A1620', '#B01E2B', '#4A4A4A', '#6B1018', '#2F2F2F', '#7A1A24'];
 const STATUS = { playing: 'Playing', completed: 'Completed', want_to_play: 'Want to Play' };
@@ -17,7 +18,7 @@ function Pill({ label, bg, fg, outline }) {
   );
 }
 
-export default function GameCard({ game, onPress }) {
+export default function GameCard({ game, onPress, compat }) {
   const t = useTheme();
   const hash = [...game.title].reduce((n, c) => n + c.charCodeAt(0), 0);
   const statusKey = game.status === 'want_to_play' ? 'want' : game.status;
@@ -65,6 +66,7 @@ export default function GameCard({ game, onPress }) {
           ) : (
             <Pill label="Not Installed" bg={t.badge.notInstalled.bg} fg={t.badge.notInstalled.fg} />
           )}
+          {compat && compat !== 'unknown' && <CompatBadge status={compat} />}
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 'auto' }}>
           <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.text }}>{rating}</Text>

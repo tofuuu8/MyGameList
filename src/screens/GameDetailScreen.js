@@ -5,6 +5,8 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/Button';
+import CompatBadge from '../components/CompatBadge';
+import { checkCompat, ensureRequirements } from '../lib/compat';
 import { confirmAction, notify } from '../lib/dialog';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
@@ -30,6 +32,8 @@ export default function GameDetailScreen({ navigation, route }) {
   const [addHours, setAddHours] = useState('');
   const [saved, setSaved] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [specs, setSpecs] = useState(null);
+  const [reqLoading, setReqLoading] = useState(false);
   const savedTimer = useRef(null);
 
   useEffect(() => {
@@ -48,6 +52,29 @@ export default function GameDetailScreen({ navigation, route }) {
     });
     return () => { off = true; clearTimeout(savedTimer.current); };
   }, [id]);
+
+  useEffect(() => {
+    supabase.from('pc_specs').select('*').maybeSingle().then(({ data }) => setSpecs(data || null));
+  }, []);
+
+  // Look up the game's minimum requirements the first time it is opened.
+  useEffect(() => {
+    if (!game || game.req_checked) return undefined;
+    let off = false;
+    setReqLoading(true);
+    ensureRequirements(game)
+      .then((g) => {
+        if (off) return;
+        setGame((prev) => (prev ? {
+          ...prev, rawg_id: g.rawg_id, min_ram_gb: g.min_ram_gb, min_vram_gb: g.min_vram_gb,
+          min_disk_gb: g.min_disk_gb, min_gpu: g.min_gpu, min_cpu: g.min_cpu, req_checked: g.req_checked,
+        } : prev));
+      })
+      .catch(() => {})
+      .finally(() => { if (!off) setReqLoading(false); });
+    return () => { off = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game && game.id]);
 
   // Saves changes right away. Reverts the screen if saving fails.
   async function patch(fields) {
@@ -130,6 +157,18 @@ export default function GameDetailScreen({ navigation, route }) {
     );
   }
 
+  const compat = checkCompat(game, specs);
+  const reqParts = [
+    game.min_ram_gb != null && `${Number(game.min_ram_gb)} GB RAM`,
+    game.min_vram_gb != null && `${Number(game.min_vram_gb)} GB graphics memory`,
+    game.min_disk_gb != null && `${Number(game.min_disk_gb)} GB disk space`,
+  ].filter(Boolean);
+  const reqLine = reqParts.length
+    ? `Minimum: ${reqParts.join(' · ')}`
+    : game.req_checked
+      ? 'No requirements found for this game.'
+      : reqLoading ? 'Looking up requirements…' : 'Requirements not checked yet.';
+
   const hash = [...game.title].reduce((n, c) => n + c.charCodeAt(0), 0);
   const rating = game.rating != null ? Number(game.rating) : null;
 
@@ -194,6 +233,26 @@ export default function GameDetailScreen({ navigation, route }) {
               trackColor={{ false: t.border, true: t.red }}
               thumbColor="#FFFFFF"
             />
+          </View>
+
+          <View style={[card, { padding: 14, gap: 8 }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: t.text }}>System requirements</Text>
+              {reqLoading ? <ActivityIndicator color={t.red} size="small" /> : <CompatBadge status={compat.status} />}
+            </View>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.muted }}>{reqLine}</Text>
+            {compat.reasons.map((r) => (
+              <Text key={r} style={{ fontFamily: fonts.regular, fontSize: 13, color: t.link }}>{r}</Text>
+            ))}
+            {!specs && (
+              <Pressable
+                onPress={() => navigation.navigate('Main', { screen: 'My PC' })}
+                accessibilityRole="button"
+                style={{ minHeight: 40, justifyContent: 'center' }}
+              >
+                <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: t.link }}>Set up My PC to see if you can run it ›</Text>
+              </Pressable>
+            )}
           </View>
 
           <View style={[card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 14, paddingRight: 4 }]}>
