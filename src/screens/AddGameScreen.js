@@ -6,10 +6,10 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TextField from '../components/TextField';
 import Button from '../components/Button';
+import { rawgGet } from '../lib/rawg';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
-const RAWG_KEY = process.env.EXPO_PUBLIC_RAWG_KEY;
 const STATUSES = [
   { key: 'playing', label: 'Playing' },
   { key: 'completed', label: 'Completed' },
@@ -28,6 +28,7 @@ export default function AddGameScreen({ navigation }) {
   const [genre, setGenre] = useState('');
   const [hours, setHours] = useState('');
   const [cover, setCover] = useState(null);
+  const [rawgId, setRawgId] = useState(null);
   const [status, setStatus] = useState('want_to_play');
   const [installed, setInstalled] = useState(false);
   const [rating, setRating] = useState(null);
@@ -39,7 +40,7 @@ export default function AddGameScreen({ navigation }) {
   useEffect(() => {
     const q = query.trim();
     setSearchError('');
-    if (!RAWG_KEY || q.length < 2) {
+    if (q.length < 2) {
       setResults([]);
       return undefined;
     }
@@ -47,13 +48,11 @@ export default function AddGameScreen({ navigation }) {
     const timer = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(
-          `https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(q)}&page_size=5`
-        );
-        const json = await res.json();
+        const json = await rawgGet('/games', { search: q, page_size: 5 });
         if (id !== reqId.current) return;
         setResults(
           (json.results || []).map((g) => ({
+            id: g.id,
             name: g.name,
             cover: g.background_image,
             genre: g.genres?.[0]?.name || '',
@@ -72,13 +71,14 @@ export default function AddGameScreen({ navigation }) {
     setTitle(r.name);
     setGenre(r.genre);
     setCover(r.cover);
+    setRawgId(r.id ?? null);
     setQuery('');
     setResults([]);
   }
 
   function reset() {
     setQuery(''); setResults([]); setTitle(''); setGenre(''); setHours('');
-    setCover(null); setStatus('want_to_play'); setInstalled(false); setRating(null); setError('');
+    setCover(null); setRawgId(null); setStatus('want_to_play'); setInstalled(false); setRating(null); setError('');
   }
 
   async function save() {
@@ -94,6 +94,7 @@ export default function AddGameScreen({ navigation }) {
       title: title.trim(),
       genre: genre.trim() || null,
       cover_url: cover,
+      rawg_id: rawgId,
       status,
       is_installed: installed,
       rating,
@@ -137,18 +138,12 @@ export default function AddGameScreen({ navigation }) {
               placeholderTextColor={t.muted}
               accessibilityLabel="Search games by name"
               autoCorrect={false}
-              editable={!!RAWG_KEY}
               style={{
                 height: 44, borderRadius: 12, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface,
                 color: t.text, paddingLeft: 42, paddingRight: 14, fontFamily: fonts.regular, fontSize: 15,
               }}
             />
           </View>
-          {!RAWG_KEY && (
-            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.muted, marginTop: 8 }}>
-              Game search needs a free RAWG key in your .env file. You can still enter details yourself.
-            </Text>
-          )}
           {searching && <ActivityIndicator color={t.red} style={{ marginTop: 10 }} />}
           {!!searchError && (
             <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.link, marginTop: 8 }}>{searchError}</Text>
@@ -200,7 +195,7 @@ export default function AddGameScreen({ navigation }) {
           <View style={{ flex: 1, height: 1, backgroundColor: t.border }} />
         </View>
 
-        <TextField label="Title" value={title} onChangeText={setTitle} placeholder="Game title" autoCapitalize="words" />
+        <TextField label="Title" value={title} onChangeText={(v) => { setTitle(v); setRawgId(null); }} placeholder="Game title" autoCapitalize="words" />
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <TextField style={{ flex: 1 }} label="Genre" value={genre} onChangeText={setGenre} placeholder="e.g. RPG" autoCapitalize="words" />

@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { notify } from '../lib/dialog';
+import { confirmAction, notify } from '../lib/dialog';
 import { fonts, useTheme, useThemePreference } from '../theme';
 
 const OPTIONS = [
@@ -21,10 +22,24 @@ export default function ProfileScreen({ navigation }) {
   const name = user?.user_metadata?.username || 'Player';
   const card = { backgroundColor: t.surface, borderColor: t.border, borderWidth: 1, borderRadius: 14 };
 
-  async function changePassword() {
-    const { error } = await supabase.auth.resetPasswordForEmail(user.email);
-    if (error) notify('Could not send email', error.message);
-    else notify('Check your email', 'We sent a link to reset your password.');
+  const [deleting, setDeleting] = useState(false);
+
+  function deleteAccount() {
+    confirmAction(
+      'Delete your account?',
+      'This permanently deletes your account and all your games. This cannot be undone.',
+      'Delete',
+      async () => {
+        setDeleting(true);
+        const { error } = await supabase.functions.invoke('delete-account');
+        if (error) {
+          setDeleting(false);
+          notify('Could not delete account', 'Please try again in a moment.');
+          return;
+        }
+        await supabase.auth.signOut({ scope: 'local' }); // returns to the login screen
+      }
+    );
   }
 
   return (
@@ -76,7 +91,7 @@ export default function ProfileScreen({ navigation }) {
 
       <View style={card}>
         {[
-          { label: 'Change password', onPress: changePassword },
+          { label: 'Change password', onPress: () => navigation.navigate('ChangePassword') },
           { label: 'About MyGameList', onPress: () => notify('MyGameList', 'Version 1.0.0\nYour Games, Your Journey.') },
         ].map((r, i, arr) => (
           <Pressable
@@ -94,11 +109,12 @@ export default function ProfileScreen({ navigation }) {
       <View style={{ marginTop: 'auto', gap: 6 }}>
         <Button title="Log out" variant="secondary" onPress={() => supabase.auth.signOut()} />
         <Pressable
-          onPress={() => notify('Coming soon', 'Account deletion will be added in a later step.')}
+          onPress={deleteAccount}
+          disabled={deleting}
           accessibilityRole="button"
           style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: t.link }}>Delete account</Text>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: t.link }}>{deleting ? 'Deleting…' : 'Delete account'}</Text>
         </Pressable>
       </View>
     </ScrollView>

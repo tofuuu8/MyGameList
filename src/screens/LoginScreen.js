@@ -42,16 +42,6 @@ export default function LoginScreen({ navigation }) {
     }
   }
 
-  async function handleForgot() {
-    if (!email.trim()) {
-      setError('Enter your email above, then tap "Forgot password?".');
-      return;
-    }
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim());
-    if (err) setError(err.message);
-    else notify('Check your email', 'We sent a link to reset your password.');
-  }
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: t.bg }}
@@ -95,7 +85,7 @@ export default function LoginScreen({ navigation }) {
         />
 
         <Pressable
-          onPress={handleForgot}
+          onPress={() => navigation.navigate('ForgotPassword', { email: email.trim() })}
           accessibilityRole="link"
           style={{ alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center' }}
         >

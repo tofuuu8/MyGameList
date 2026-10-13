@@ -4,33 +4,29 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import FilterSheet from '../components/FilterSheet';
 import GameCard from '../components/GameCard';
+import Svg, { Circle, Path } from 'react-native-svg';
 import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
+import { checkCompat } from '../lib/compat';
+import { DEFAULT_FILTERS, activeFilterCount, applyFilters } from '../lib/filters';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
-const FILTERS = ['All', 'Playing', 'Completed', 'Want to Play', 'Installed'];
-
-function matches(game, filter) {
-  switch (filter) {
-    case 'Playing': return game.status === 'playing';
-    case 'Completed': return game.status === 'completed';
-    case 'Want to Play': return game.status === 'want_to_play';
-    case 'Installed': return game.is_installed;
-    default: return true;
-  }
-}
+const QUICK = ['All', 'Playing', 'Completed', 'Want to Play', 'Installed'];
 
 export default function LibraryScreen({ navigation }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const [games, setGames] = useState([]);
+  const [specs, setSpecs] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState('All');
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [query, setQuery] = useState('');
 
   const load = useCallback(async () => {
@@ -40,18 +36,31 @@ export default function LibraryScreen({ navigation }) {
       .order('created_at', { ascending: false });
     if (err) setError(err.message);
     else { setGames(data); setError(''); }
+    const { data: pc } = await supabase.from('pc_specs').select('*').maybeSingle();
+    setSpecs(pc || null);
     setLoading(false);
     setRefreshing(false);
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return games.filter(
-      (g) => matches(g, filter) && (!q || g.title.toLowerCase().includes(q) || (g.genre || '').toLowerCase().includes(q))
-    );
-  }, [games, filter, query]);
+  const shown = useMemo(() => applyFilters(games, filters, specs, query), [games, filters, specs, query]);
+  const activeCount = activeFilterCount(filters);
+
+  function quickOn(name) {
+    if (name === 'All') return !filters.status && filters.install === 'all';
+    if (name === 'Installed') return filters.install === 'installed';
+    return filters.status === { Playing: 'playing', Completed: 'completed', 'Want to Play': 'want_to_play' }[name];
+  }
+
+  function pickQuick(name) {
+    setFilters((f) => {
+      if (name === 'All') return { ...f, status: null, install: 'all' };
+      if (name === 'Installed') return { ...f, install: f.install === 'installed' ? 'all' : 'installed' };
+      const key = { Playing: 'playing', Completed: 'completed', 'Want to Play': 'want_to_play' }[name];
+      return { ...f, status: f.status === key ? null : key };
+    });
+  }
 
   const initial = (session?.user?.user_metadata?.username || session?.user?.email || '?').charAt(0).toUpperCase();
 
@@ -74,26 +83,45 @@ export default function LibraryScreen({ navigation }) {
         </Pressable>
       </View>
 
-      <TextInput
-        value={query}
-        onChangeText={setQuery}
-        placeholder="Search your games"
-        placeholderTextColor={t.muted}
-        accessibilityLabel="Search your games"
-        autoCorrect={false}
-        style={{
-          height: 44, borderRadius: 12, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface,
-          color: t.text, paddingHorizontal: 14, fontFamily: fonts.regular, fontSize: 15, marginBottom: 12,
-        }}
-      />
+      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search your games"
+          placeholderTextColor={t.muted}
+          accessibilityLabel="Search your games"
+          autoCorrect={false}
+          style={{
+            flex: 1, minWidth: 0, height: 44, borderRadius: 12, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface,
+            color: t.text, paddingHorizontal: 14, fontFamily: fonts.regular, fontSize: 15,
+          }}
+        />
+        <Pressable
+          onPress={() => setSheetOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={activeCount > 0 ? `Filter and sort, ${activeCount} on` : 'Filter and sort'}
+          style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M4 7h8M18 7h2M4 17h2M12 17h8" />
+            <Circle cx="15" cy="7" r="2.2" />
+            <Circle cx="9" cy="17" r="2.2" />
+          </Svg>
+          {activeCount > 0 && (
+            <View style={{ position: 'absolute', top: -6, right: -6, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: t.red, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+              <Text style={{ fontFamily: fonts.bold, fontSize: 11, color: t.onRed }}>{activeCount}</Text>
+            </View>
+          )}
+        </Pressable>
+      </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 14 }}>
-        {FILTERS.map((f) => {
-          const on = f === filter;
+        {QUICK.map((f) => {
+          const on = quickOn(f);
           return (
             <Pressable
               key={f}
-              onPress={() => setFilter(f)}
+              onPress={() => pickQuick(f)}
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
               style={{
@@ -130,20 +158,25 @@ export default function LibraryScreen({ navigation }) {
     );
   } else {
     empty = (
-      <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.muted, marginTop: 32, textAlign: 'center' }}>
-        No games match your search or filter.
-      </Text>
+      <View style={{ marginTop: 32, gap: 12 }}>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.muted, textAlign: 'center' }}>
+          No games match your search or filters.
+        </Text>
+        <Button title="Clear filters" variant="secondary" onPress={() => { setFilters(DEFAULT_FILTERS); setQuery(''); }} />
+      </View>
     );
   }
 
   return (
+    <>
     <FlatList
       style={{ flex: 1, backgroundColor: t.bg }}
       contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24, gap: 10 }}
       data={shown}
+      extraData={[specs, filters]}
       keyExtractor={(g) => g.id}
       renderItem={({ item }) => (
-        <GameCard game={item} onPress={() => navigation.getParent()?.navigate('GameDetail', { id: item.id })} />
+        <GameCard game={item} compat={checkCompat(item, specs).status} onPress={() => navigation.getParent()?.navigate('GameDetail', { id: item.id })} />
       )}
       ListHeaderComponent={header}
       ListEmptyComponent={empty}
@@ -152,5 +185,15 @@ export default function LibraryScreen({ navigation }) {
         <RefreshControl refreshing={refreshing} tintColor={t.red} onRefresh={() => { setRefreshing(true); load(); }} />
       }
     />
+    <FilterSheet
+      visible={sheetOpen}
+      onClose={() => setSheetOpen(false)}
+      filters={filters}
+      onApply={setFilters}
+      games={games}
+      specs={specs}
+      query={query}
+    />
+    </>
   );
 }

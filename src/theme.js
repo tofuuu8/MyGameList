@@ -7,6 +7,7 @@ export const palettes = {
     bg: '#0A0A0A', surface: '#161616', border: '#2C2C2C', tabBar: '#101010',
     text: '#FFFFFF', muted: '#A3A3A3',
     red: '#E5202E', link: '#FF4B55', onRed: '#FFFFFF', track: '#2C2C2C',
+    sheet: '#161616', dim: 'rgba(0,0,0,0.62)',
     badge: {
       playing: { bg: '#E5202E', fg: '#FFFFFF' },
       completed: { bg: '#FFFFFF', fg: '#0A0A0A' },
@@ -18,6 +19,7 @@ export const palettes = {
     bg: '#FFFFFF', surface: '#F4F4F4', border: '#E2E2E2', tabBar: '#FAFAFA',
     text: '#0A0A0A', muted: '#5E5E5E',
     red: '#D91C29', link: '#D91C29', onRed: '#FFFFFF', track: '#E2E2E2',
+    sheet: '#FFFFFF', dim: 'rgba(0,0,0,0.4)',
     badge: {
       playing: { bg: '#D91C29', fg: '#FFFFFF' },
       completed: { bg: '#0A0A0A', fg: '#FFFFFF' },

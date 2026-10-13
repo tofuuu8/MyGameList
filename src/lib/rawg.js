@@ -1,7 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from './supabase';
 
-export const RAWG_KEY = process.env.EXPO_PUBLIC_RAWG_KEY;
+// Game data comes from RAWG through a Supabase function named "rawg".
+// The RAWG key is stored on the server, so it is never inside the app.
+export const RAWG_ENABLED = true;
 const TTL = 12 * 60 * 60 * 1000; // keep results on the phone for 12 hours
+
+export async function rawgGet(path, params = {}) {
+  const { data, error } = await supabase.functions.invoke('rawg', { body: { path, params } });
+  if (error) throw error;
+  return data;
+}
 
 function normalize(g) {
   return {
@@ -13,11 +22,11 @@ function normalize(g) {
   };
 }
 
-// Fetch PC games from RAWG. `params` are RAWG query options (genres, ordering, dates, ...).
-// Results are saved on the phone so Discover loads fast and uses fewer requests.
+// Fetch PC games. `params` are RAWG options (genres, ordering, dates, ...).
+// Results are saved on the phone so Discover loads fast and makes fewer requests.
 export async function fetchGames(params, { cache = true } = {}) {
-  const base = new URLSearchParams({ platforms: '4', ...params }).toString();
-  const cacheKey = `rawg:${base}`;
+  const all = { platforms: '4', ...params };
+  const cacheKey = `rawg:${new URLSearchParams(all).toString()}`;
 
   let stale = null;
   if (cache) {
@@ -34,9 +43,7 @@ export async function fetchGames(params, { cache = true } = {}) {
   }
 
   try {
-    const res = await fetch(`https://api.rawg.io/api/games?key=${RAWG_KEY}&${base}`);
-    if (!res.ok) throw new Error(`RAWG ${res.status}`);
-    const json = await res.json();
+    const json = await rawgGet('/games', all);
     const data = (json.results || []).map(normalize);
     if (cache) AsyncStorage.setItem(cacheKey, JSON.stringify({ t: Date.now(), data })).catch(() => {});
     return data;

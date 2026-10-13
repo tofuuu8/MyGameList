@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/Button';
-import { RAWG_KEY, fetchGames } from '../lib/rawg';
+import { RAWG_ENABLED, fetchGames } from '../lib/rawg';
 import { supabase } from '../lib/supabase';
 import { notify } from '../lib/dialog';
 import { fonts, useTheme } from '../theme';
@@ -62,7 +62,7 @@ export default function DiscoverScreen() {
 
   // Trending (recent, popular) and popular-of-all-time lists for the chosen genre.
   useEffect(() => {
-    if (!RAWG_KEY) return undefined;
+    if (!RAWG_ENABLED) return undefined;
     let cancelled = false;
     setLoading(true);
     setError('');
@@ -82,7 +82,7 @@ export default function DiscoverScreen() {
   // Search all games as the user types.
   useEffect(() => {
     const q = query.trim();
-    if (!RAWG_KEY || q.length < 2) { setResults([]); setSearching(false); return undefined; }
+    if (!RAWG_ENABLED || q.length < 2) { setResults([]); setSearching(false); return undefined; }
     const id = ++reqId.current;
     const timer = setTimeout(async () => {
       setSearching(true);
@@ -115,7 +115,7 @@ export default function DiscoverScreen() {
     if (owned.has(key) || adding.has(game.id)) return;
     setAdding((s) => new Set(s).add(game.id));
     const { error: err } = await supabase.from('games').insert({
-      title: game.name, genre: game.genre || null, cover_url: game.cover, status: 'want_to_play',
+      title: game.name, genre: game.genre || null, cover_url: game.cover, status: 'want_to_play', rawg_id: game.id,
     });
     setAdding((s) => { const n = new Set(s); n.delete(game.id); return n; });
     if (err) { notify('Could not add game', err.message); return; }
@@ -191,21 +191,11 @@ export default function DiscoverScreen() {
           placeholderTextColor={t.muted}
           accessibilityLabel="Search all games"
           autoCorrect={false}
-          editable={!!RAWG_KEY}
           style={{ height: 44, borderRadius: 12, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface, color: t.text, paddingLeft: 42, paddingRight: 14, fontFamily: fonts.regular, fontSize: 15 }}
         />
       </View>
 
-      {!RAWG_KEY && (
-        <View style={[card, { marginHorizontal: 20, padding: 14, gap: 6 }]}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text }}>Turn on Discover</Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.muted, lineHeight: 19 }}>
-            Add a free RAWG key to your .env file as EXPO_PUBLIC_RAWG_KEY (get one at rawg.io/apidocs), then restart the app with npx expo start -c.
-          </Text>
-        </View>
-      )}
-
-      {RAWG_KEY && (
+      {RAWG_ENABLED && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 20 }}>
           {GENRES.map((g) => {
             const on = g.label === genre.label;
@@ -224,7 +214,7 @@ export default function DiscoverScreen() {
         </ScrollView>
       )}
 
-      {RAWG_KEY && searchMode && (
+      {RAWG_ENABLED && searchMode && (
         <View style={{ paddingHorizontal: 20, gap: 10 }}>
           <Text style={heading}>Results</Text>
           {searching && <ActivityIndicator color={t.red} style={{ marginTop: 12 }} />}
@@ -235,16 +225,16 @@ export default function DiscoverScreen() {
         </View>
       )}
 
-      {RAWG_KEY && !searchMode && loading && <ActivityIndicator color={t.red} style={{ marginTop: 32 }} />}
+      {RAWG_ENABLED && !searchMode && loading && <ActivityIndicator color={t.red} style={{ marginTop: 32 }} />}
 
-      {RAWG_KEY && !searchMode && !loading && !!error && (
+      {RAWG_ENABLED && !searchMode && !loading && !!error && (
         <View style={{ paddingHorizontal: 20, gap: 12 }}>
           <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.link }}>{error}</Text>
           <Button title="Try again" variant="secondary" onPress={() => setReloadKey((k) => k + 1)} />
         </View>
       )}
 
-      {RAWG_KEY && !searchMode && !loading && !error && (
+      {RAWG_ENABLED && !searchMode && !loading && !error && (
         <>
           <Text style={[heading, { paddingHorizontal: 20 }]}>Trending now</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 20 }}>
@@ -268,7 +258,7 @@ export default function DiscoverScreen() {
         </>
       )}
 
-      {RAWG_KEY && (
+      {RAWG_ENABLED && (
         <Pressable onPress={() => Linking.openURL('https://rawg.io')} accessibilityRole="link" style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.muted }}>Game data from RAWG</Text>
         </Pressable>
