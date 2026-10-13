@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
-  Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View,
+  KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppIconTile } from '../components/Logo';
 import TextField from '../components/TextField';
 import Button from '../components/Button';
 import { supabase } from '../lib/supabase';
+import { notify } from '../lib/dialog';
 import { fonts, useTheme } from '../theme';
 
 export default function LoginScreen({ navigation }) {
@@ -48,7 +49,7 @@ export default function LoginScreen({ navigation }) {
     }
     const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim());
     if (err) setError(err.message);
-    else Alert.alert('Check your email', 'We sent a link to reset your password.');
+    else notify('Check your email', 'We sent a link to reset your password.');
   }
 
   return (
@@ -120,7 +121,7 @@ export default function LoginScreen({ navigation }) {
         <Button
           title="Continue with Google"
           variant="secondary"
-          onPress={() => Alert.alert('Coming soon', 'Google sign-in will be added in a later step.')}
+          onPress={() => notify('Coming soon', 'Google sign-in will be added in a later step.')}
         />
 
         <View style={{ flex: 1, minHeight: 24 }} />

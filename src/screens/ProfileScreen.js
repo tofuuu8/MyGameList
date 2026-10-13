@@ -1,8 +1,9 @@
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import { notify } from '../lib/dialog';
 import { fonts, useTheme, useThemePreference } from '../theme';
 
 const OPTIONS = [
@@ -22,8 +23,8 @@ export default function ProfileScreen({ navigation }) {
 
   async function changePassword() {
     const { error } = await supabase.auth.resetPasswordForEmail(user.email);
-    if (error) Alert.alert('Could not send email', error.message);
-    else Alert.alert('Check your email', 'We sent a link to reset your password.');
+    if (error) notify('Could not send email', error.message);
+    else notify('Check your email', 'We sent a link to reset your password.');
   }
 
   return (
@@ -76,7 +77,7 @@ export default function ProfileScreen({ navigation }) {
       <View style={card}>
         {[
           { label: 'Change password', onPress: changePassword },
-          { label: 'About MyGameList', onPress: () => Alert.alert('MyGameList', 'Version 1.0.0\nYour Games, Your Journey.') },
+          { label: 'About MyGameList', onPress: () => notify('MyGameList', 'Version 1.0.0\nYour Games, Your Journey.') },
         ].map((r, i, arr) => (
           <Pressable
             key={r.label}
@@ -93,7 +94,7 @@ export default function ProfileScreen({ navigation }) {
       <View style={{ marginTop: 'auto', gap: 6 }}>
         <Button title="Log out" variant="secondary" onPress={() => supabase.auth.signOut()} />
         <Pressable
-          onPress={() => Alert.alert('Coming soon', 'Account deletion will be added in a later step.')}
+          onPress={() => notify('Coming soon', 'Account deletion will be added in a later step.')}
           accessibilityRole="button"
           style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
         >

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Image, Linking, Pressable, ScrollView, Text, TextInput, View,
+  ActivityIndicator, Image, Linking, Pressable, ScrollView, Text, TextInput, View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import { RAWG_KEY, fetchGames } from '../lib/rawg';
 import { supabase } from '../lib/supabase';
+import { notify } from '../lib/dialog';
 import { fonts, useTheme } from '../theme';
 
 const GENRES = [
@@ -104,7 +105,7 @@ export default function DiscoverScreen() {
       setPopular((prev) => [...prev, ...next.filter((g) => !prev.some((p) => p.id === g.id))]);
       setPage(page + 1);
     } catch {
-      Alert.alert('Could not load more games', 'Check your connection and try again.');
+      notify('Could not load more games', 'Check your connection and try again.');
     }
     setLoadingMore(false);
   }
@@ -117,7 +118,7 @@ export default function DiscoverScreen() {
       title: game.name, genre: game.genre || null, cover_url: game.cover, status: 'want_to_play',
     });
     setAdding((s) => { const n = new Set(s); n.delete(game.id); return n; });
-    if (err) { Alert.alert('Could not add game', err.message); return; }
+    if (err) { notify('Could not add game', err.message); return; }
     setOwned((s) => new Set(s).add(key));
   }
 

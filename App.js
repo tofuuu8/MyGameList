@@ -19,6 +19,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import GameDetailScreen from './src/screens/GameDetailScreen';
 
 // Keep the native splash up until fonts are ready.
 SplashScreenNative.preventAutoHideAsync();
@@ -53,6 +54,7 @@ function Root() {
           <>
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="GameDetail" component={GameDetailScreen} />
           </>
         ) : (
           <>

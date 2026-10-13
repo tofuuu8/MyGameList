@@ -22,14 +22,6 @@ function matches(game, filter) {
   }
 }
 
-// For testing the screen before the Add Game screen exists.
-const SAMPLE_GAMES = [
-  { title: 'Hollow Knight', genre: 'Metroidvania', status: 'completed', is_installed: true, rating: 5, hours_played: 48 },
-  { title: "Baldur's Gate 3", genre: 'RPG', status: 'playing', is_installed: true, rating: 4.5, hours_played: 112 },
-  { title: 'Stardew Valley', genre: 'Farming Sim', status: 'playing', is_installed: false, rating: 4.5, hours_played: 86 },
-  { title: 'Disco Elysium', genre: 'RPG', status: 'want_to_play', is_installed: false, rating: null, hours_played: 0 },
-];
-
 export default function LibraryScreen({ navigation }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -53,12 +45,6 @@ export default function LibraryScreen({ navigation }) {
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  async function addSamples() {
-    setLoading(true);
-    const { error: err } = await supabase.from('games').insert(SAMPLE_GAMES);
-    if (err) { setError(err.message); setLoading(false); } else { load(); }
-  }
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -138,9 +124,8 @@ export default function LibraryScreen({ navigation }) {
       <View style={{ marginTop: 40, gap: 12 }}>
         <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: t.text }}>Your library is empty</Text>
         <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.muted, lineHeight: 20 }}>
-          Add your first game from the Add tab. To preview how the app looks, you can load a few sample games.
+          Add your first game from the Add tab, or find one in Discover.
         </Text>
-        <Button title="Load sample games" variant="secondary" onPress={addSamples} />
       </View>
     );
   } else {
@@ -157,7 +142,9 @@ export default function LibraryScreen({ navigation }) {
       contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24, gap: 10 }}
       data={shown}
       keyExtractor={(g) => g.id}
-      renderItem={({ item }) => <GameCard game={item} />}
+      renderItem={({ item }) => (
+        <GameCard game={item} onPress={() => navigation.getParent()?.navigate('GameDetail', { id: item.id })} />
+      )}
       ListHeaderComponent={header}
       ListEmptyComponent={empty}
       keyboardShouldPersistTaps="handled"

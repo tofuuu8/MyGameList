@@ -1,4 +1,4 @@
-import { Image, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { fonts, useTheme } from '../theme';
 
 const COVER_COLORS = ['#8A1620', '#B01E2B', '#4A4A4A', '#6B1018', '#2F2F2F', '#7A1A24'];
@@ -17,7 +17,7 @@ function Pill({ label, bg, fg, outline }) {
   );
 }
 
-export default function GameCard({ game }) {
+export default function GameCard({ game, onPress }) {
   const t = useTheme();
   const hash = [...game.title].reduce((n, c) => n + c.charCodeAt(0), 0);
   const statusKey = game.status === 'want_to_play' ? 'want' : game.status;
@@ -26,7 +26,10 @@ export default function GameCard({ game }) {
   const hours = `${Number(game.hours_played || 0)} h`;
 
   return (
-    <View
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${game.title}`}
       style={{
         flexDirection: 'row', gap: 12, padding: 10, borderRadius: 14, borderWidth: 1,
         borderColor: t.border, backgroundColor: t.surface,
@@ -68,6 +71,6 @@ export default function GameCard({ game }) {
           <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.muted }}>{hours}</Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
