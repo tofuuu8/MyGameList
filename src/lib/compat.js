@@ -1,3 +1,4 @@
+import { cpuTierFromText, gpuTierFromText } from './hardware';
 import { RAWG_ENABLED, rawgGet } from './rawg';
 import { supabase } from './supabase';
 
@@ -88,22 +89,53 @@ export async function ensureRequirements(game) {
 }
 
 // ---- Comparing a game with the user's PC ----------------------------------------------
-// Uses RAM, graphics memory (VRAM) and free disk space only. These are plain numbers;
-// comparing GPU and CPU models fairly would need a benchmark database.
+// An ESTIMATE based on RAM, free disk space, graphics memory (dedicated cards only),
+// the graphics level and, only for big gaps, the processor level.
+// "can" needs the graphics level to be checked too. Without that, the answer is "unknown".
 export function checkCompat(game, specs) {
-  const checks = [
-    { label: 'RAM', need: game.min_ram_gb, have: specs ? specs.ram_gb : null },
-    { label: 'graphics memory', need: game.min_vram_gb, have: specs ? specs.vram_gb : null },
-    { label: 'free disk space', need: game.min_disk_gb, have: specs ? specs.disk_gb : null },
-  ].filter((c) => c.need != null && c.have != null);
+  const reasons = [];
+  const notes = [];
+  if (!specs) return { status: 'unknown', reasons, notes };
 
-  if (checks.length === 0) return { status: 'unknown', reasons: [] };
-  const fails = checks.filter((c) => Number(c.have) < Number(c.need));
-  if (fails.length > 0) {
-    return {
-      status: 'might',
-      reasons: fails.map((c) => `Needs ${Number(c.need)} GB ${c.label}; you have ${Number(c.have)} GB.`),
-    };
+  let failed = 0;
+
+  // Plain numbers: RAM, graphics memory (a separate graphics card only), free disk space.
+  [
+    ['RAM', game.min_ram_gb, specs.ram_gb],
+    ['graphics memory', game.min_vram_gb, specs.gpu_kind === 'integrated' ? null : specs.vram_gb],
+    ['free disk space', game.min_disk_gb, specs.disk_gb],
+  ].forEach(([label, need, have]) => {
+    if (need == null || have == null) return;
+    if (Number(have) < Number(need)) {
+      failed += 1;
+      reasons.push(`Needs ${Number(need)} GB ${label}; you have ${Number(have)} GB.`);
+    }
+  });
+
+  // Graphics level.
+  const needGpu = gpuTierFromText(game.min_gpu);
+  let gpuChecked = false;
+  if (specs.gpu_tier == null) {
+    notes.push('Choose your graphics in My PC for a more accurate result.');
+  } else if (needGpu == null) {
+    notes.push("We couldn't read this game's graphics requirement.");
+  } else {
+    gpuChecked = true;
+    if (Number(specs.gpu_tier) < needGpu) {
+      failed += 1;
+      const kind = specs.gpu_kind === 'integrated' ? 'Integrated graphics are' : 'Your graphics card is';
+      reasons.push(`${kind} weaker than the ${String(game.min_gpu).trim().slice(0, 60)} this game asks for.`);
+    }
   }
-  return { status: 'can', reasons: [] };
+
+  // Processor level: only flagged when the gap is large, because broad levels are rough.
+  const needCpu = cpuTierFromText(game.min_cpu);
+  if (specs.cpu_tier != null && needCpu != null && needCpu - Number(specs.cpu_tier) >= 3) {
+    failed += 1;
+    reasons.push('This game asks for a much faster processor.');
+  }
+
+  if (failed > 0) return { status: 'might', reasons, notes: [] };
+  if (gpuChecked) return { status: 'can', reasons: [], notes: [] };
+  return { status: 'unknown', reasons: [], notes };
 }

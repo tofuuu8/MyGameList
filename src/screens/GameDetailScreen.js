@@ -245,13 +245,16 @@ export default function GameDetailScreen({ navigation, route }) {
             {compat.reasons.map((r) => (
               <Text key={r} style={{ fontFamily: fonts.regular, fontSize: 13, color: t.link }}>{r}</Text>
             ))}
-            {!specs && (
+            {compat.notes.map((n) => (
+              <Text key={n} style={{ fontFamily: fonts.regular, fontSize: 12, color: t.muted }}>{n}</Text>
+            ))}
+            {(!specs || specs.gpu_tier == null) && (
               <Pressable
                 onPress={() => navigation.navigate('Main', { screen: 'My PC' })}
                 accessibilityRole="button"
                 style={{ minHeight: 40, justifyContent: 'center' }}
               >
-                <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: t.link }}>Set up My PC to see if you can run it ›</Text>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: t.link }}>{specs ? 'Choose your graphics in My PC ›' : 'Set up My PC to see if you can run it ›'}</Text>
               </Pressable>
             )}
           </View>
