@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import AuthLayout from '../components/AuthLayout';
 import Button from '../components/Button';
 import TextField from '../components/TextField';
+import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
@@ -25,7 +26,7 @@ export default function ForgotPasswordScreen({ navigation, route }) {
     const { error: err } = await supabase.auth.resetPasswordForEmail(address);
     setLoading(false);
     if (err) {
-      setError(err.message);
+      setError(friendlyError(err));
       return;
     }
     navigation.navigate('ResetPassword', { email: address });

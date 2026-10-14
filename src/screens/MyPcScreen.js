@@ -7,6 +7,7 @@ import CompatBadge from '../components/CompatBadge';
 import TextField from '../components/TextField';
 import { useAuth } from '../context/AuthContext';
 import { checkCompat, ensureRequirements } from '../lib/compat';
+import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
@@ -98,7 +99,7 @@ export default function MyPcScreen() {
       .select()
       .single();
     setSaving(false);
-    if (err) { setError(err.message); return; }
+    if (err) { setError(friendlyError(err)); return; }
     setSpecs(data);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

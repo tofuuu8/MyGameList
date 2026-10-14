@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TextField from '../components/TextField';
 import Button from '../components/Button';
 import { rawgGet } from '../lib/rawg';
+import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
@@ -102,7 +103,7 @@ export default function AddGameScreen({ navigation }) {
     });
     setSaving(false);
     if (err) {
-      setError(err.message);
+      setError(friendlyError(err));
       return;
     }
     reset();

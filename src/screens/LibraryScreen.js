@@ -11,6 +11,7 @@ import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
 import { checkCompat } from '../lib/compat';
 import { DEFAULT_FILTERS, activeFilterCount, applyFilters } from '../lib/filters';
+import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
@@ -34,7 +35,7 @@ export default function LibraryScreen({ navigation }) {
       .from('games')
       .select('*')
       .order('created_at', { ascending: false });
-    if (err) setError(err.message);
+    if (err) setError(friendlyError(err));
     else { setGames(data); setError(''); }
     const { data: pc } = await supabase.from('pc_specs').select('*').maybeSingle();
     setSpecs(pc || null);
@@ -62,7 +63,7 @@ export default function LibraryScreen({ navigation }) {
     });
   }
 
-  const initial = (session?.user?.user_metadata?.username || session?.user?.email || '?').charAt(0).toUpperCase();
+  const initial = (session?.user?.user_metadata?.username || session?.user?.user_metadata?.full_name || session?.user?.email || '?').charAt(0).toUpperCase();
 
   const header = (
     <View>

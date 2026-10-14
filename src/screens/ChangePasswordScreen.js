@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import TextField from '../components/TextField';
 import { useAuth } from '../context/AuthContext';
 import { notify } from '../lib/dialog';
+import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
@@ -36,7 +37,7 @@ export default function ChangePasswordScreen({ navigation }) {
     }
     const { error: updateError } = await supabase.auth.updateUser({ password });
     setLoading(false);
-    if (updateError) { setError(updateError.message); return; }
+    if (updateError) { setError(friendlyError(updateError)); return; }
     notify('Password changed', 'Your password has been updated.');
     navigation.goBack();
   }

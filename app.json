@@ -7,15 +7,21 @@
     "icon": "./assets/icon.png",
     "scheme": "mygamelist",
     "userInterfaceStyle": "automatic",
-    "ios": { "supportsTablet": false, "bundleIdentifier": "com.mygamelist.app" },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.mygamelist.app"
+    },
     "android": {
       "package": "com.mygamelist.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#E5202E"
-      }
+      },
+      "versionCode": 1
     },
-    "web": { "favicon": "./assets/favicon.png" },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
     "plugins": [
       [
         "expo-splash-screen",

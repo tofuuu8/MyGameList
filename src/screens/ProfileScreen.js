@@ -19,7 +19,7 @@ export default function ProfileScreen({ navigation }) {
   const { session } = useAuth();
   const { pref, setPref } = useThemePreference();
   const user = session?.user;
-  const name = user?.user_metadata?.username || 'Player';
+  const name = user?.user_metadata?.username || user?.user_metadata?.full_name || user?.user_metadata?.name || 'Player';
   const card = { backgroundColor: t.surface, borderColor: t.border, borderWidth: 1, borderRadius: 14 };
 
   const [deleting, setDeleting] = useState(false);
@@ -92,6 +92,8 @@ export default function ProfileScreen({ navigation }) {
       <View style={card}>
         {[
           { label: 'Change password', onPress: () => navigation.navigate('ChangePassword') },
+          { label: 'Privacy Policy', onPress: () => navigation.navigate('Legal', { doc: 'privacy' }) },
+          { label: 'Terms of Service', onPress: () => navigation.navigate('Legal', { doc: 'terms' }) },
           { label: 'About MyGameList', onPress: () => notify('MyGameList', 'Version 1.0.0\nYour Games, Your Journey.') },
         ].map((r, i, arr) => (
           <Pressable

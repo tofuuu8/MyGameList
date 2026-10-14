@@ -4,6 +4,7 @@ import AuthLayout from '../components/AuthLayout';
 import Button from '../components/Button';
 import TextField from '../components/TextField';
 import { useAuth } from '../context/AuthContext';
+import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
@@ -66,7 +67,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
     const { error: updateError } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (updateError) {
-      setError(updateError.message);
+      setError(friendlyError(updateError));
       return;
     }
     setRecovering(false); // opens the app, signed in with the new password
@@ -77,7 +78,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
     setError('');
     const { error: err } = await supabase.auth.resetPasswordForEmail(email);
     if (err) {
-      setError(err.message);
+      setError(friendlyError(err));
     } else {
       setInfo('We sent you a new code.');
       setCooldown(60);

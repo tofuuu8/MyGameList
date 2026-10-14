@@ -8,6 +8,7 @@ import Button from '../components/Button';
 import CompatBadge from '../components/CompatBadge';
 import { checkCompat, ensureRequirements } from '../lib/compat';
 import { confirmAction, notify } from '../lib/dialog';
+import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
@@ -83,7 +84,7 @@ export default function GameDetailScreen({ navigation, route }) {
     const { error: err } = await supabase.from('games').update(fields).eq('id', id);
     if (err) {
       setGame(prev);
-      notify('Could not save', err.message);
+      notify('Could not save', friendlyError(err));
       return false;
     }
     setSaved(true);
@@ -122,7 +123,7 @@ export default function GameDetailScreen({ navigation, route }) {
       const { error: err } = await supabase.from('games').delete().eq('id', id);
       if (err) {
         setDeleting(false);
-        notify('Could not delete', err.message);
+        notify('Could not delete', friendlyError(err));
         return;
       }
       navigation.goBack();

@@ -19,6 +19,8 @@ import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import LegalScreen from './src/screens/LegalScreen';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
@@ -59,6 +61,7 @@ function Root() {
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="GameDetail" component={GameDetailScreen} />
             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+            <Stack.Screen name="Legal" component={LegalScreen} />
           </>
         ) : (
           <>
@@ -67,6 +70,7 @@ function Root() {
             <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+            <Stack.Screen name="Legal" component={LegalScreen} />
           </>
         )}
       </Stack.Navigator>
@@ -90,9 +94,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <AuthProvider>
-          <Root />
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <Root />
+          </AuthProvider>
+        </ErrorBoundary>
       </ThemeProvider>
     </SafeAreaProvider>
   );

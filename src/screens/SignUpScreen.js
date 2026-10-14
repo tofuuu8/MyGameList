@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LogoMark, Wordmark } from '../components/Logo';
 import TextField from '../components/TextField';
 import Button from '../components/Button';
+import LegalNote from '../components/LegalNote';
+import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
@@ -43,7 +45,12 @@ export default function SignUpScreen({ navigation }) {
     setLoading(false);
 
     if (err) {
-      setError(err.message);
+      setError(friendlyError(err));
+      return;
+    }
+    // Supabase hides whether an email is taken: an existing account comes back with no identities.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      setError('An account with this email already exists. Try logging in.');
       return;
     }
     // With email confirmation on, there is no session yet: ask for the emailed code.
@@ -113,6 +120,7 @@ export default function SignUpScreen({ navigation }) {
 
         <View style={{ marginTop: 20 }}>
           <Button title="Sign up" onPress={handleSignUp} loading={loading} />
+          <LegalNote navigation={navigation} prefix="By signing up, you agree to our" />
         </View>
 
         <View style={{ flex: 1, minHeight: 24 }} />

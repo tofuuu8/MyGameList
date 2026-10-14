@@ -6,8 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppIconTile } from '../components/Logo';
 import TextField from '../components/TextField';
 import Button from '../components/Button';
+import GoogleButton from '../components/GoogleButton';
+import LegalNote from '../components/LegalNote';
+import features from '../features';
+import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
-import { notify } from '../lib/dialog';
 import { fonts, useTheme } from '../theme';
 
 export default function LoginScreen({ navigation }) {
@@ -37,7 +40,7 @@ export default function LoginScreen({ navigation }) {
         await supabase.auth.resend({ type: 'signup', email: email.trim() });
         navigation.navigate('VerifyEmail', { email: email.trim() });
       } else {
-        setError(err.message);
+        setError(friendlyError(err));
       }
     }
   }
@@ -105,14 +108,15 @@ export default function LoginScreen({ navigation }) {
 
         <Button title="Log in" onPress={handleLogin} loading={loading} />
 
-        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.muted, textAlign: 'center', marginVertical: 14 }}>
-          or
-        </Text>
-        <Button
-          title="Continue with Google"
-          variant="secondary"
-          onPress={() => notify('Coming soon', 'Google sign-in will be added in a later step.')}
-        />
+        {features.googleSignIn && (
+          <>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.muted, textAlign: 'center', marginVertical: 14 }}>
+            or
+          </Text>
+          <GoogleButton onError={setError} />
+          </>
+        )}
+        <LegalNote navigation={navigation} />
 
         <View style={{ flex: 1, minHeight: 24 }} />
         <Pressable
