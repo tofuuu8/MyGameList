@@ -21,6 +21,7 @@ import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import LegalScreen from './src/screens/LegalScreen';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import UpdateBanner from './src/components/UpdateBanner';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
@@ -52,6 +53,7 @@ function Root() {
   if (loading || !minTimeDone) return <SplashScreen />;
 
   return (
+    <>
     <NavigationContainer theme={navTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -75,6 +77,8 @@ function Root() {
         )}
       </Stack.Navigator>
     </NavigationContainer>
+    <UpdateBanner />
+    </>
   );
 }
 
