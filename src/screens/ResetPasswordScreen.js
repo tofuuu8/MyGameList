@@ -105,7 +105,6 @@ export default function ResetPasswordScreen({ navigation, route }) {
           label="Verification code"
           value={code}
           onChangeText={(v) => setCode(v.replace(/\D/g, ''))}
-          placeholder="123456"
           keyboardType="number-pad"
           maxLength={10}
           autoComplete="one-time-code"
