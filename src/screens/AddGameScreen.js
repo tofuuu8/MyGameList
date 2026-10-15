@@ -6,16 +6,13 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TextField from '../components/TextField';
 import Button from '../components/Button';
+import features from '../features';
+import { STATUSES } from '../lib/status';
 import { rawgGet } from '../lib/rawg';
 import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
-const STATUSES = [
-  { key: 'playing', label: 'Playing' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'want_to_play', label: 'Want to Play' },
-];
 const STAR = 'M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z';
 
 export default function AddGameScreen({ navigation }) {
@@ -126,6 +123,23 @@ export default function AddGameScreen({ navigation }) {
           </Text>
         </View>
 
+        {features.steamImport && (
+          <Pressable
+            onPress={() => navigation.getParent()?.navigate('SteamImport')}
+            accessibilityRole="button"
+            accessibilityLabel="Import your Steam library"
+            style={[card, { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }]}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text }}>Import your Steam library</Text>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.muted, marginTop: 2 }}>
+                Add all your Steam games at once, with hours played.
+              </Text>
+            </View>
+            <Text style={{ color: t.muted, fontSize: 20 }}>›</Text>
+          </Pressable>
+        )}
+
         <View>
           <View>
             <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={t.muted} strokeWidth={2} strokeLinecap="round" style={{ position: 'absolute', left: 14, top: 12, zIndex: 1 }}>
@@ -205,7 +219,7 @@ export default function AddGameScreen({ navigation }) {
 
         <View>
           <Text style={label}>Play status</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {STATUSES.map((s) => {
               const on = s.key === status;
               return (
@@ -215,7 +229,7 @@ export default function AddGameScreen({ navigation }) {
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
                   style={{
-                    flex: 1, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1,
+                    flexBasis: '47%', flexGrow: 1, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1,
                     borderColor: on ? t.red : t.border, backgroundColor: on ? t.red : t.surface,
                   }}
                 >

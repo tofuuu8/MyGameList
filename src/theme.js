@@ -13,6 +13,7 @@ export const palettes = {
       completed: { bg: '#FFFFFF', fg: '#0A0A0A' },
       want: { bg: '#2C2C2C', fg: '#E5E5E5' },
       notInstalled: { bg: '#262626', fg: '#A3A3A3' },
+      dropped: { bg: '#3A1A1D', fg: '#FF8A90' },
     },
   },
   light: {
@@ -25,6 +26,7 @@ export const palettes = {
       completed: { bg: '#0A0A0A', fg: '#FFFFFF' },
       want: { bg: '#E8E8E8', fg: '#333333' },
       notInstalled: { bg: '#E6E6E6', fg: '#5E5E5E' },
+      dropped: { bg: '#FBE4E6', fg: '#A3121D' },
     },
   },
 };

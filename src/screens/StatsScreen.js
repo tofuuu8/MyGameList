@@ -15,7 +15,7 @@ export default function StatsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      supabase.from('games').select('status,genre,is_installed,hours_played').then(({ data, error: err }) => {
+      supabase.from('games').select('status,genre,is_installed,hours_played,goal_hours').then(({ data, error: err }) => {
         if (err) setError(err.message);
         else { setGames(data); setError(''); }
       });
@@ -42,6 +42,9 @@ export default function StatsScreen() {
       topGenre: top ? top[0] : '—',
       playing: games.filter((g) => g.status === 'playing').length,
       want: games.filter((g) => g.status === 'want_to_play').length,
+      dropped: games.filter((g) => g.status === 'dropped').length,
+      goalsSet: games.filter((g) => g.goal_hours).length,
+      goalsMet: games.filter((g) => g.goal_hours && Number(g.hours_played || 0) >= Number(g.goal_hours)).length,
     };
   }, [games]);
 
@@ -88,7 +91,7 @@ export default function StatsScreen() {
       </Text>
     );
   } else {
-    const maxStatus = Math.max(s.playing, s.completed, s.want);
+    const maxStatus = Math.max(s.playing, s.completed, s.want, s.dropped);
     body = (
       <>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
@@ -114,7 +117,18 @@ export default function StatsScreen() {
           <Bar label="Playing" count={s.playing} max={maxStatus} color={t.red} />
           <Bar label="Completed" count={s.completed} max={maxStatus} color={t.text} />
           <Bar label="Want to Play" count={s.want} max={maxStatus} color={t.muted} />
+          <Bar label="Dropped" count={s.dropped} max={maxStatus} color="#7A7A7A" />
         </View>
+
+        {s.goalsSet > 0 && (
+          <View style={[card, { padding: 14, gap: 10 }]}>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: t.text }}>Play-time goals</Text>
+            <View style={{ height: 10, borderRadius: 5, backgroundColor: t.track, overflow: 'hidden' }}>
+              <View style={{ height: 10, backgroundColor: t.red, width: `${(s.goalsMet / s.goalsSet) * 100}%` }} />
+            </View>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.muted }}>{s.goalsMet} of {s.goalsSet} goals reached</Text>
+          </View>
+        )}
       </>
     );
   }

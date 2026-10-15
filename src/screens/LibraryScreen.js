@@ -15,7 +15,7 @@ import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
-const QUICK = ['All', 'Playing', 'Completed', 'Want to Play', 'Installed'];
+const QUICK = ['All', 'Playing', 'Completed', 'Want to Play', 'Dropped', 'Installed'];
 
 export default function LibraryScreen({ navigation }) {
   const t = useTheme();
@@ -51,14 +51,14 @@ export default function LibraryScreen({ navigation }) {
   function quickOn(name) {
     if (name === 'All') return !filters.status && filters.install === 'all';
     if (name === 'Installed') return filters.install === 'installed';
-    return filters.status === { Playing: 'playing', Completed: 'completed', 'Want to Play': 'want_to_play' }[name];
+    return filters.status === { Playing: 'playing', Completed: 'completed', 'Want to Play': 'want_to_play', Dropped: 'dropped' }[name];
   }
 
   function pickQuick(name) {
     setFilters((f) => {
       if (name === 'All') return { ...f, status: null, install: 'all' };
       if (name === 'Installed') return { ...f, install: f.install === 'installed' ? 'all' : 'installed' };
-      const key = { Playing: 'playing', Completed: 'completed', 'Want to Play': 'want_to_play' }[name];
+      const key = { Playing: 'playing', Completed: 'completed', 'Want to Play': 'want_to_play', Dropped: 'dropped' }[name];
       return { ...f, status: f.status === key ? null : key };
     });
   }

@@ -34,20 +34,7 @@
             "backgroundColor": "#0A0A0A"
           }
         }
-      ],
-      "expo-web-browser"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "50dc5f10-ceed-4ab5-989f-6cb78a1d66b5"
-      }
-    },
-    "owner": "onemanteam",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/50dc5f10-ceed-4ab5-989f-6cb78a1d66b5"
-    }
+      ]
+    ]
   }
 }

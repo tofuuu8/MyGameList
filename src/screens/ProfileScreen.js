@@ -5,6 +5,8 @@ import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { confirmAction, notify } from '../lib/dialog';
+import features from '../features';
+import { releases } from '../releases';
 import { fonts, useTheme, useThemePreference } from '../theme';
 
 const OPTIONS = [
@@ -92,9 +94,12 @@ export default function ProfileScreen({ navigation }) {
       <View style={card}>
         {[
           { label: 'Change password', onPress: () => navigation.navigate('ChangePassword') },
+          ...(features.steamImport ? [{ label: 'Import from Steam', onPress: () => navigation.navigate('SteamImport') }] : []),
+          { label: 'Backup and restore', onPress: () => navigation.navigate('Backup') },
+          { label: "What's new", onPress: () => navigation.navigate('WhatsNew') },
           { label: 'Privacy Policy', onPress: () => navigation.navigate('Legal', { doc: 'privacy' }) },
           { label: 'Terms of Service', onPress: () => navigation.navigate('Legal', { doc: 'terms' }) },
-          { label: 'About MyGameList', onPress: () => notify('MyGameList', 'Version 1.0.0\nYour Games, Your Journey.') },
+          { label: 'About MyGameList', onPress: () => notify('MyGameList', `Version ${releases[0].id}\nYour Games, Your Journey.`) },
         ].map((r, i, arr) => (
           <Pressable
             key={r.label}

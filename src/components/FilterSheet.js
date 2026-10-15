@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 're
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from './Button';
 import { DEFAULT_FILTERS, applyFilters } from '../lib/filters';
+import { STATUSES } from '../lib/status';
 import { fonts, useTheme } from '../theme';
 
 const SORTS = [
@@ -10,11 +11,6 @@ const SORTS = [
   { key: 'title', label: 'Title A–Z' },
   { key: 'hours', label: 'Most hours' },
   { key: 'rating', label: 'Top rated' },
-];
-const STATUSES = [
-  { key: 'playing', label: 'Playing' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'want_to_play', label: 'Want to Play' },
 ];
 const INSTALLS = [
   { key: 'all', label: 'All' },
@@ -28,19 +24,19 @@ const RATINGS = [
   { key: 5, label: '5 ★' },
 ];
 
-function Chip({ label, on, onPress, grow, t }) {
+function Chip({ label, on, onPress, grow, half, t }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: on }}
       style={{
-        flex: grow ? 1 : undefined, height: 36, paddingHorizontal: grow ? 0 : 14, borderRadius: 18,
+        flex: grow ? 1 : undefined, flexBasis: half ? '47%' : undefined, flexGrow: half ? 1 : undefined, height: 36, paddingHorizontal: grow || half ? 0 : 14, borderRadius: 18,
         alignItems: 'center', justifyContent: 'center', borderWidth: 1,
         borderColor: on ? t.red : t.border, backgroundColor: on ? t.red : t.surface,
       }}
     >
-      <Text style={{ fontFamily: on ? fonts.bold : fonts.regular, fontSize: grow ? 12 : 13, color: on ? t.onRed : t.text }}>
+      <Text style={{ fontFamily: on ? fonts.bold : fonts.regular, fontSize: grow || half ? 12 : 13, color: on ? t.onRed : t.text }}>
         {label}
       </Text>
     </Pressable>
@@ -107,9 +103,9 @@ export default function FilterSheet({ visible, onClose, filters, onApply, games,
                 <Chip key={o.key} grow t={t} label={o.label} on={draft.sort === o.key} onPress={() => set({ sort: o.key })} />
               ))}
             </Group>
-            <Group label="Play status" t={t}>
+            <Group label="Play status" t={t} wrap>
               {STATUSES.map((o) => (
-                <Chip key={o.key} grow t={t} label={o.label} on={draft.status === o.key} onPress={() => set({ status: draft.status === o.key ? null : o.key })} />
+                <Chip key={o.key} half t={t} label={o.label} on={draft.status === o.key} onPress={() => set({ status: draft.status === o.key ? null : o.key })} />
               ))}
             </Group>
             <Group label="Install status" t={t}>

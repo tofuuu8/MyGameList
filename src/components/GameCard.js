@@ -1,9 +1,9 @@
 import { Image, Pressable, Text, View } from 'react-native';
 import { fonts, useTheme } from '../theme';
 import CompatBadge from './CompatBadge';
+import { STATUS_LABEL as STATUS } from '../lib/status';
 
 const COVER_COLORS = ['#8A1620', '#B01E2B', '#4A4A4A', '#6B1018', '#2F2F2F', '#7A1A24'];
-const STATUS = { playing: 'Playing', completed: 'Completed', want_to_play: 'Want to Play' };
 
 function Pill({ label, bg, fg, outline }) {
   return (
@@ -24,7 +24,9 @@ export default function GameCard({ game, onPress, compat }) {
   const statusKey = game.status === 'want_to_play' ? 'want' : game.status;
   const sb = t.badge[statusKey];
   const rating = game.rating != null ? `${Number(game.rating).toFixed(1)} ★` : 'Not rated';
-  const hours = `${Number(game.hours_played || 0)} h`;
+  const played = Number(game.hours_played || 0);
+  const goal = game.goal_hours ? Number(game.goal_hours) : 0;
+  const hours = goal ? `${played} / ${goal} h` : `${played} h`;
 
   return (
     <Pressable
@@ -72,6 +74,11 @@ export default function GameCard({ game, onPress, compat }) {
           <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.text }}>{rating}</Text>
           <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.muted }}>{hours}</Text>
         </View>
+        {goal > 0 && (
+          <View style={{ height: 4, borderRadius: 2, backgroundColor: t.track, marginTop: 6, overflow: 'hidden' }}>
+            <View style={{ height: 4, backgroundColor: t.red, width: `${Math.min(100, (played / goal) * 100)}%` }} />
+          </View>
+        )}
       </View>
     </Pressable>
   );

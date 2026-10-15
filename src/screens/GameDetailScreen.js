@@ -9,14 +9,10 @@ import CompatBadge from '../components/CompatBadge';
 import { checkCompat, ensureRequirements } from '../lib/compat';
 import { confirmAction, notify } from '../lib/dialog';
 import { friendlyError } from '../lib/errors';
+import { STATUSES } from '../lib/status';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
-const STATUSES = [
-  { key: 'playing', label: 'Playing' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'want_to_play', label: 'Want to Play' },
-];
 const STAR = 'M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z';
 const COVER_COLORS = ['#8A1620', '#B01E2B', '#4A4A4A', '#6B1018', '#2F2F2F', '#7A1A24'];
 
@@ -31,6 +27,7 @@ export default function GameDetailScreen({ navigation, route }) {
   const [genre, setGenre] = useState('');
   const [notes, setNotes] = useState('');
   const [addHours, setAddHours] = useState('');
+  const [goalText, setGoalText] = useState('');
   const [saved, setSaved] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [specs, setSpecs] = useState(null);
@@ -48,6 +45,7 @@ export default function GameDetailScreen({ navigation, route }) {
         setTitle(data.title);
         setGenre(data.genre || '');
         setNotes(data.notes || '');
+        setGoalText(data.goal_hours ? String(Number(data.goal_hours)) : '');
       }
       setLoading(false);
     });
@@ -105,6 +103,19 @@ export default function GameDetailScreen({ navigation, route }) {
   function saveNotes() {
     const next = notes.trim() || null;
     if (next !== (game.notes || null)) patch({ notes: next });
+  }
+
+  async function saveGoal() {
+    const n = parseFloat(goalText.replace(',', '.'));
+    if (!(n > 0)) {
+      notify('Enter a goal', 'Type how many hours you want to play, like 20.');
+      return;
+    }
+    await patch({ goal_hours: Math.min(Math.round(n * 10) / 10, 99999) });
+  }
+
+  async function clearGoal() {
+    if (await patch({ goal_hours: null })) setGoalText('');
   }
 
   async function logTime() {
@@ -208,7 +219,7 @@ export default function GameDetailScreen({ navigation, route }) {
             </Text>
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {STATUSES.map((s) => {
               const on = s.key === game.status;
               return (
@@ -217,7 +228,7 @@ export default function GameDetailScreen({ navigation, route }) {
                   onPress={() => !on && patch({ status: s.key })}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
-                  style={{ flex: 1, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: on ? t.red : t.border, backgroundColor: on ? t.red : t.surface }}
+                  style={{ flexBasis: '47%', flexGrow: 1, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: on ? t.red : t.border, backgroundColor: on ? t.red : t.surface }}
                 >
                   <Text style={{ fontFamily: on ? fonts.bold : fonts.regular, fontSize: 12, color: on ? t.onRed : t.text }}>{s.label}</Text>
                 </Pressable>
@@ -304,6 +315,47 @@ export default function GameDetailScreen({ navigation, route }) {
                 <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: t.onRed }}>Log time</Text>
               </Pressable>
             </View>
+          </View>
+
+          <View style={[card, { padding: 14, gap: 10 }]}>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: t.text }}>Play-time goal</Text>
+            {game.goal_hours ? (
+              <>
+                <View style={{ height: 10, borderRadius: 5, backgroundColor: t.track, overflow: 'hidden' }}>
+                  <View style={{ height: 10, backgroundColor: t.red, width: `${Math.min(100, (Number(game.hours_played) / Number(game.goal_hours)) * 100)}%` }} />
+                </View>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.muted }}>
+                  {Number(game.hours_played) >= Number(game.goal_hours)
+                    ? `Goal reached ✓  ${Number(game.hours_played)} of ${Number(game.goal_hours)} h`
+                    : `${Number(game.hours_played)} of ${Number(game.goal_hours)} h  ·  ${Math.round((Number(game.hours_played) / Number(game.goal_hours)) * 100)}%`}
+                </Text>
+              </>
+            ) : (
+              <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.muted }}>Set a target number of hours for this game.</Text>
+            )}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TextInput
+                value={goalText}
+                onChangeText={setGoalText}
+                placeholder="Goal in hours, e.g. 20"
+                placeholderTextColor={t.muted}
+                keyboardType="decimal-pad"
+                accessibilityLabel="Goal in hours"
+                style={{ flex: 1, height: 44, borderRadius: 12, borderWidth: 1, borderColor: t.border, backgroundColor: t.bg, color: t.text, paddingHorizontal: 14, fontFamily: fonts.regular, fontSize: 15 }}
+              />
+              <Pressable
+                onPress={saveGoal}
+                accessibilityRole="button"
+                style={{ height: 44, paddingHorizontal: 18, borderRadius: 12, backgroundColor: t.red, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: t.onRed }}>Set goal</Text>
+              </Pressable>
+            </View>
+            {!!game.goal_hours && (
+              <Pressable onPress={clearGoal} accessibilityRole="button" style={{ minHeight: 40, justifyContent: 'center' }}>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: t.link }}>Remove goal</Text>
+              </Pressable>
+            )}
           </View>
 
           <View style={[card, { padding: 14 }]}>

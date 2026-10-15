@@ -20,6 +20,10 @@ import SignUpScreen from './src/screens/SignUpScreen';
 import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import LegalScreen from './src/screens/LegalScreen';
+import SteamImportScreen from './src/screens/SteamImportScreen';
+import BackupScreen from './src/screens/BackupScreen';
+import WhatsNewScreen from './src/screens/WhatsNewScreen';
+import WhatsNew from './src/components/WhatsNew';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import UpdateBanner from './src/components/UpdateBanner';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
@@ -62,6 +66,9 @@ function Root() {
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="GameDetail" component={GameDetailScreen} />
+            <Stack.Screen name="SteamImport" component={SteamImportScreen} />
+            <Stack.Screen name="Backup" component={BackupScreen} />
+            <Stack.Screen name="WhatsNew" component={WhatsNewScreen} />
             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
             <Stack.Screen name="Legal" component={LegalScreen} />
           </>
@@ -78,6 +85,7 @@ function Root() {
       </Stack.Navigator>
     </NavigationContainer>
     <UpdateBanner />
+    <WhatsNew signedIn={!!session && !recovering} />
     </>
   );
 }
