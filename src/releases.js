@@ -5,6 +5,14 @@ import features from './features';
 
 export const releases = [
   {
+    id: '1.1.1',
+    date: 'October 2026',
+    title: 'Opening screen fix',
+    changes: [
+      { type: 'fixed', text: 'The logo and app name on the opening screen now sit in the middle of the screen. Before, the logo could appear at the very top, over the phone\'s status bar.' },
+    ],
+  },
+  {
     id: '1.1.0',
     date: 'October 2026',
     title: features.steamImport ? 'Steam import, backups, goals and a Dropped status' : 'Backups, goals and a Dropped status',
@@ -17,6 +25,7 @@ export const releases = [
       { type: 'new', text: 'Back up your library. Open Profile, then Backup and restore. Save your games as a spreadsheet (CSV) or as a backup file (JSON), and restore from a backup file whenever you need to.' },
       { type: 'new', text: 'A Dropped status for games you stopped playing. It appears when you add or edit a game, in the Library filters, and in your Stats.' },
       { type: 'new', text: 'Play-time goals. Set a target number of hours on a game\'s page. Your progress shows on the game and on its card in the Library, and Stats counts the goals you reached.' },
+      { type: 'improved', text: 'A smaller download, so the app installs on phones with little free storage, plus a themed icon that matches your wallpaper colors on Android 13 and newer.' },
       { type: 'new', text: 'This What\'s new page. After each update you will see what changed. You can read past updates any time in Profile, under What\'s new.' },
     ],
   },

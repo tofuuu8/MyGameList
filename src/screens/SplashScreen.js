@@ -49,7 +49,8 @@ export default function SplashScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  // Written out in full: the shortcut StyleSheet.absoluteFillObject is no longer available in newer React Native.
+  center: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   wordmark: { position: 'absolute', top: '50%', marginTop: 70 },
   bottom: { position: 'absolute', bottom: 48, left: 0, right: 0, alignItems: 'center' },
   track: { width: 120, height: 4, borderRadius: 99, overflow: 'hidden' },
