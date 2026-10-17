@@ -2,7 +2,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { supabase } from '../lib/supabase';
+import { friendlyError } from '../lib/errors';
+import { fetchAllGames } from '../lib/paged';
 import { fonts, useTheme } from '../theme';
 
 const fmt = (n) => String(Math.round(n * 10) / 10);
@@ -15,10 +16,9 @@ export default function StatsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      supabase.from('games').select('status,genre,is_installed,hours_played,goal_hours').then(({ data, error: err }) => {
-        if (err) setError(err.message);
-        else { setGames(data); setError(''); }
-      });
+      fetchAllGames('status,genre,is_installed,hours_played,goal_hours')
+        .then((data) => { setGames(data); setError(''); })
+        .catch((e) => setError(friendlyError(e)));
     }, [])
   );
 

@@ -9,9 +9,12 @@ import GameCard from '../components/GameCard';
 import Svg, { Circle, Path } from 'react-native-svg';
 import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
+import NewVersionCard from '../components/NewVersionCard';
 import { checkCompat } from '../lib/compat';
 import { DEFAULT_FILTERS, activeFilterCount, applyFilters } from '../lib/filters';
 import { friendlyError } from '../lib/errors';
+import { fetchAllGames } from '../lib/paged';
+import { loadActivePc } from '../lib/pcs';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
 
@@ -31,14 +34,13 @@ export default function LibraryScreen({ navigation }) {
   const [query, setQuery] = useState('');
 
   const load = useCallback(async () => {
-    const { data, error: err } = await supabase
-      .from('games')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (err) setError(friendlyError(err));
-    else { setGames(data); setError(''); }
-    const { data: pc } = await supabase.from('pc_specs').select('*').maybeSingle();
-    setSpecs(pc || null);
+    try {
+      setGames(await fetchAllGames());
+      setError('');
+    } catch (e) {
+      setError(friendlyError(e));
+    }
+    setSpecs(await loadActivePc());
     setLoading(false);
     setRefreshing(false);
   }, []);
@@ -83,6 +85,8 @@ export default function LibraryScreen({ navigation }) {
           <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.onRed }}>{initial}</Text>
         </Pressable>
       </View>
+
+      <NewVersionCard />
 
       <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
         <TextInput

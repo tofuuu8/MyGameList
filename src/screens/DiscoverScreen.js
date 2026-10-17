@@ -7,6 +7,8 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import { RAWG_ENABLED, fetchGames } from '../lib/rawg';
+import { fetchAllGames } from '../lib/paged';
+import { fetchRecommendations, topGenres } from '../lib/recommend';
 import { supabase } from '../lib/supabase';
 import { notify } from '../lib/dialog';
 import { fonts, useTheme } from '../theme';
@@ -48,15 +50,20 @@ export default function DiscoverScreen() {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [owned, setOwned] = useState(new Set());
+  const [library, setLibrary] = useState([]);
+  const [recs, setRecs] = useState([]);
   const [adding, setAdding] = useState(new Set());
   const reqId = useRef(0);
 
   // Which games are already in the user's library (to show "In library").
   useFocusEffect(
     useCallback(() => {
-      supabase.from('games').select('title').then(({ data }) => {
-        if (data) setOwned(new Set(data.map((g) => g.title.toLowerCase())));
-      });
+      fetchAllGames('title,genre,status,rating,hours_played')
+        .then((rows) => {
+          setOwned(new Set(rows.map((g) => g.title.toLowerCase())));
+          setLibrary(rows);
+        })
+        .catch(() => {});
     }, [])
   );
 
@@ -78,6 +85,20 @@ export default function DiscoverScreen() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [genre, reloadKey]);
+
+  // "Because you play ...": popular games in the genres you play most, minus the ones you own.
+  useEffect(() => {
+    const top = topGenres(library, 2);
+    if (top.length === 0) { setRecs([]); return undefined; }
+    let cancelled = false;
+    const have = new Set(library.map((g) => g.title.toLowerCase()));
+    Promise.all(
+      top.map((name) =>
+        fetchRecommendations(name, have).then((items) => ({ genre: name, items })).catch(() => ({ genre: name, items: [] }))
+      )
+    ).then((all) => { if (!cancelled) setRecs(all.filter((r) => r.items.length > 0)); });
+    return () => { cancelled = true; };
+  }, [library]);
 
   // Search all games as the user types.
   useEffect(() => {
@@ -247,6 +268,22 @@ export default function DiscoverScreen() {
               </View>
             ))}
           </ScrollView>
+
+          {genre.label === 'Trending' && recs.map((r) => (
+            <View key={r.genre} style={{ gap: 14 }}>
+              <Text style={[heading, { paddingHorizontal: 20 }]}>Because you play {r.genre}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 20 }}>
+                {r.items.map((g) => (
+                  <View key={g.id} style={[card, { width: 150, padding: 8, gap: 6 }]}>
+                    <Cover game={g} width={132} height={104} radius={10} />
+                    <Text numberOfLines={1} style={{ fontFamily: fonts.bold, fontSize: 14, color: t.text }}>{g.name}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: fonts.regular, fontSize: 12, color: t.muted }}>{g.genre || ' '}</Text>
+                    {addButton(g, true)}
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          ))}
 
           <Text style={[heading, { paddingHorizontal: 20 }]}>
             {genre.label === 'Trending' ? 'Popular of all time' : `Popular in ${genre.label}`}

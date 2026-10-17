@@ -6,9 +6,11 @@ import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import CompatBadge from '../components/CompatBadge';
+import GameAbout from '../components/GameAbout';
 import { checkCompat, ensureRequirements } from '../lib/compat';
 import { confirmAction, notify } from '../lib/dialog';
 import { friendlyError } from '../lib/errors';
+import { loadActivePc } from '../lib/pcs';
 import { STATUSES } from '../lib/status';
 import { supabase } from '../lib/supabase';
 import { fonts, useTheme } from '../theme';
@@ -53,7 +55,7 @@ export default function GameDetailScreen({ navigation, route }) {
   }, [id]);
 
   useEffect(() => {
-    supabase.from('pc_specs').select('*').maybeSingle().then(({ data }) => setSpecs(data || null));
+    loadActivePc().then((pc) => setSpecs(pc || null));
   }, []);
 
   // Look up the game's minimum requirements the first time it is opened.
@@ -116,6 +118,13 @@ export default function GameDetailScreen({ navigation, route }) {
 
   async function clearGoal() {
     if (await patch({ goal_hours: null })) setGoalText('');
+  }
+
+  // When the game's RAWG id is found by name, keep it so later lookups are exact.
+  async function rememberRawgId(id) {
+    if (game.rawg_id) return;
+    await supabase.from('games').update({ rawg_id: id }).eq('id', game.id);
+    setGame((g) => (g ? { ...g, rawg_id: id } : g));
   }
 
   async function logTime() {
@@ -256,6 +265,9 @@ export default function GameDetailScreen({ navigation, route }) {
             {compat.reasons.map((r) => (
               <Text key={r} style={{ fontFamily: fonts.regular, fontSize: 13, color: t.link }}>{r}</Text>
             ))}
+            {!!specs && !!specs.name && (
+              <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.muted }}>Checked for: {specs.name}</Text>
+            )}
             {compat.notes.map((n) => (
               <Text key={n} style={{ fontFamily: fonts.regular, fontSize: 12, color: t.muted }}>{n}</Text>
             ))}
@@ -371,6 +383,8 @@ export default function GameDetailScreen({ navigation, route }) {
               style={{ fontFamily: fonts.regular, fontSize: 14, color: t.text, minHeight: 72, textAlignVertical: 'top', padding: 0, lineHeight: 20 }}
             />
           </View>
+
+          <GameAbout game={game} onFoundId={rememberRawgId} />
 
           <Button title="Delete game" variant="secondary" loading={deleting} onPress={remove} />
         </View>

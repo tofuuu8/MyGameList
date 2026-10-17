@@ -5,6 +5,19 @@ import features from './features';
 
 export const releases = [
   {
+    id: '1.2.0',
+    date: 'October 2026',
+    title: 'Several PCs, paste your specs, recommendations and richer game pages',
+    changes: [
+      { type: 'new', text: 'Several PCs. In My PC you can save a laptop and a desktop and switch between them with one tap. The Can run and Might struggle results across the app follow the PC you pick.' },
+      { type: 'new', text: 'Paste my specs. In My PC, tap Paste my specs, paste the text Windows copies from Settings, System, About, and the app fills in your processor, memory, graphics and free disk space for you. You only need to check it and tap Save.' },
+      { type: 'new', text: 'Recommendations. Discover now has "Because you play..." rows, built from the genres you play most. Games you already own are left out.' },
+      { type: 'new', text: 'Richer game pages. Each game page now shows the release date, developer, Metacritic score, a description and screenshots. Tap a screenshot to see it full size.' },
+      { type: 'new', text: 'A new-version notice. When a newer app file is available, a card appears at the top of your Library with a Download button. The app is not on the Play Store, so this is how you find out.' },
+      { type: 'improved', text: 'Big libraries now load completely. Before, only the first 1,000 games showed up in the Library, Stats and My PC.' },
+    ],
+  },
+  {
     id: '1.1.1',
     date: 'October 2026',
     title: 'Opening screen fix',

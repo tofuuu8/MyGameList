@@ -91,7 +91,7 @@ export function gpuTierFromText(text) {
   }
   for (const m of t.matchAll(/Vega\s*(\d+)/gi)) {
     const n = Number(m[1]);
-    found.push(n >= 64 ? 6 : n >= 56 ? 5 : 2);
+    found.push(n >= 64 ? 6 : n >= 56 ? 5 : n >= 7 ? 2 : 1);
   }
   if (/GeForce\s*(?:[6-9]\d{3}|9\d{2})\b/i.test(t)) found.push(1);
   if (/Radeon\s*VII/i.test(t)) found.push(7);
@@ -116,4 +116,76 @@ export function cpuTierFromText(text) {
   if (/Core\s*i3|Ryzen\s*3|quad[- ]?core|Phenom/i.test(t)) found.push(2);
   if (/Celeron|Pentium|Athlon|Core\s*2|dual[- ]?core/i.test(t)) found.push(1);
   return found.length ? Math.min(...found) : null;
+}
+
+// ---- Reading the PC a person OWNS (for the "paste your specs" feature) -------------------
+const VRAM_STEPS = [2, 4, 6, 8, 12, 16];
+const nearestStep = (value, steps) => steps.reduce((best, x) => (Math.abs(x - value) < Math.abs(best - value) ? x : best), steps[0]);
+
+// "NVIDIA GeForce RTX 3060 Laptop GPU (6 GB)" -> { kind: 'dedicated', tier: 6, vramGb: 6 }
+// "AMD Radeon(TM) Graphics (486 MB)"          -> { kind: 'integrated', tier: 1, vramGb: null }
+export function ownedGpuFromText(raw) {
+  if (!raw) return null;
+  const text = String(raw).trim();
+  const vm = text.match(/\((\d+(?:[.,]\d+)?)\s*(GB|MB)\)/i);
+  let vramGb = null;
+  if (vm) {
+    const n = parseFloat(vm[1].replace(',', '.'));
+    vramGb = vm[2].toUpperCase() === 'GB' ? n : n / 1024;
+  }
+
+  const dedicated = /GeForce|GTX|RTX|Radeon\s*RX|Radeon\s*Pro|\bArc\s*[AB]\d|Quadro|\bMX\s*\d{3}|\bGT\s*\d{3,4}/i.test(text);
+  if (dedicated) {
+    let tier = gpuTierFromText(text);
+    if (tier == null && /\bMX\s*\d{3}/i.test(text)) tier = 3;
+    return {
+      kind: 'dedicated',
+      tier: tier == null ? null : Math.max(2, tier),
+      vramGb: vramGb != null && vramGb >= 1.5 ? nearestStep(vramGb, VRAM_STEPS) : null,
+      text,
+    };
+  }
+
+  let tier = 1;
+  const radeonM = text.match(/\b(\d{3})M\b/);
+  const vega = text.match(/Vega\s*(\d+)/i);
+  if (/Iris\s*Xe/i.test(text)) tier = 2;
+  else if (/\bArc\b/i.test(text)) tier = 3;
+  else if (radeonM && /Radeon/i.test(text)) tier = Number(radeonM[1]) <= 610 ? 1 : Number(radeonM[1]) <= 740 ? 2 : 3;
+  else if (vega) tier = Number(vega[1]) >= 7 ? 2 : 1;
+  return { kind: 'integrated', tier, vramGb: null, text };
+}
+
+// "AMD Ryzen 5 7520U with Radeon Graphics" -> { tier: 2, mobile: true }
+export function ownedCpuFromText(raw) {
+  if (!raw) return null;
+  const t = String(raw).replace(/\s+/g, ' ');
+  let m = t.match(/Ryzen\s*(?:AI\s*)?(\d)\s+(?:PRO\s+)?(\d{3,5})([A-Z]{0,3}\d?)/i);
+  if (m) {
+    const series = Number(m[1]);
+    const suffix = m[3].toUpperCase();
+    const lowPower = suffix.startsWith('U');
+    const mobile = /^(U|H|C)/.test(suffix);
+    const tier = lowPower ? 2 : series >= 9 ? 5 : series === 7 ? 4 : 3;
+    return { tier, mobile };
+  }
+  m = t.match(/Ultra\s*([3579])\s*(\d{3})([A-Z]?)/i);
+  if (m) {
+    const level = Number(m[1]);
+    const suffix = m[3].toUpperCase();
+    const lowPower = suffix === 'U' || suffix === 'V';
+    return { tier: lowPower ? 2 : level >= 9 ? 5 : level === 7 ? 4 : 3, mobile: ['U', 'V', 'H'].includes(suffix) };
+  }
+  m = t.match(/i([3579])-\s*(\d{4,5})([A-Z]{0,2}\d?)/i);
+  if (m) {
+    const level = Number(m[1]);
+    const suffix = m[3].toUpperCase();
+    const lowPower = /^(U|Y|G\d)$/.test(suffix);
+    const mobile = lowPower || /^(P|H|HS|HX|HK)$/.test(suffix);
+    if (lowPower) return { tier: 2, mobile };
+    if (suffix === 'P') return { tier: 3, mobile };
+    return { tier: level >= 9 ? 5 : level === 7 ? 4 : 3, mobile };
+  }
+  if (/Celeron|Pentium|Athlon|\bN\d{2,3}\b|Atom/i.test(t)) return { tier: 1, mobile: null };
+  return null;
 }
