@@ -1,7 +1,8 @@
 // Adds the build settings for a smaller app and a themed icon to YOUR app.json,
 // without touching anything else in it (your Expo project ID, update settings, and so on).
 //
-// Usage:   node scripts/prepare-release.js 1.1.0
+// Usage:   node scripts/prepare-release.js 1.2.0
+//          node scripts/prepare-release.js 1.2.0 YOUR-EXPO-PROJECT-ID   (only if app.json lost its project ID)
 //
 // It is safe to run more than once.
 const fs = require('fs');
@@ -9,6 +10,7 @@ const path = require('path');
 
 const file = path.join(__dirname, '..', 'app.json');
 const version = process.argv[2];
+const projectIdArg = process.argv[3];
 
 const config = JSON.parse(fs.readFileSync(file, 'utf8'));
 const expo = config.expo || (config.expo = {});
@@ -26,7 +28,24 @@ if (version) {
   }
 }
 
-// 2) Smaller app: build only for ARM phones (every real Android phone), not for PC emulators.
+// 2) Settings that let the installed app receive updates. Without runtimeVersion, expo.dev shows
+//    "Runtime: None" for the build and that app can never receive an update.
+if (!expo.runtimeVersion) {
+  expo.runtimeVersion = { policy: 'appVersion' };
+  changes.push('added runtimeVersion (so the app can receive updates)');
+}
+expo.extra = expo.extra || {};
+expo.extra.eas = expo.extra.eas || {};
+if (!expo.extra.eas.projectId && projectIdArg) {
+  expo.extra.eas.projectId = projectIdArg;
+  changes.push('added your Expo project ID');
+}
+if (expo.extra.eas.projectId && !(expo.updates && expo.updates.url)) {
+  expo.updates = { ...(expo.updates || {}), url: `https://u.expo.dev/${expo.extra.eas.projectId}` };
+  changes.push('added the update address');
+}
+
+// 3) Smaller app: build only for ARM phones (every real Android phone), not for PC emulators.
 //    Both 32-bit and 64-bit ARM are kept, because some budget phones run 32-bit Android.
 expo.plugins = expo.plugins || [];
 const ARCHS = ['armeabi-v7a', 'arm64-v8a'];
@@ -45,7 +64,7 @@ if (existing === -1) {
   expo.plugins[existing] = entry;
 }
 
-// 3) Themed icon for Android 13 and newer.
+// 4) Themed icon for Android 13 and newer.
 expo.android = expo.android || {};
 expo.android.adaptiveIcon = expo.android.adaptiveIcon || {};
 if (expo.android.adaptiveIcon.monochromeImage !== './assets/monochrome-icon.png') {
